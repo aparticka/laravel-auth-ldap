@@ -1,5 +1,7 @@
 <?php
 
+use adLDAP\adLDAP;
+
 return [
     'account_suffix' => '@mydomain.local',
     'base_dn' => 'DC=mydomain,DC=local',
