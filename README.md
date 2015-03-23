@@ -26,7 +26,7 @@ Modify your `config/app.php` file and add the service provider to the providers 
 
 Copy the configuration files to your app.
 
-    php artisan vendor:publish
+    php artisan vendor:publish --provider="LaravelAuthLdap\AuthLdapServiceProvider"
 
 Update your `config/auth.php` to use the `ldap` driver.
 
