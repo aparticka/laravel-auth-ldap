@@ -7,6 +7,8 @@ return [
     ],
     'convert_fields' => [
         'name' => 'displayname',
+        'username' => 'samaccountname',
+        'email' => 'mail',
     ],
     'credentials_fields' => [
         'username' => 'username',
