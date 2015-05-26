@@ -127,11 +127,15 @@ class BaseLdapUserProvider implements LdapUserProvider {
 
     public function retrieveByCredentials(array $credentials)
     {
-        if ($this->isUsingProvider())
+        if ($this->ldapServer instanceof noLDAPConnection && $this->isUsingProvider())
         {
             // get the user from the provider
             $user = $this->provider->retrieveByCredentials($credentials);
-            if ($user !== null) return $user;
+            if ($user !== null) {
+                return $user;
+            } else{
+                return null;
+            }
         }
 
         // grab the username from the credentials passed
@@ -144,10 +148,20 @@ class BaseLdapUserProvider implements LdapUserProvider {
 
             $model = app()->config['auth.model'];
 
-            return $model::firstOrCreate([
+            $passwordField = $this->getCredentialsField('password');
+
+            $user =  $model::firstOrCreate([
                 'name' => $ldapUser->name,
                 'email' => $ldapUser->username
             ]);
+
+            if(empty($user->password)) {
+                $user->password = bcrypt(array_get($credentials, $passwordField));
+                $user->save();
+            }
+
+
+            return $user;
         }
     }
 
