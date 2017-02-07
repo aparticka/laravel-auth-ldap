@@ -127,22 +127,41 @@ class BaseLdapUserProvider implements LdapUserProvider {
 
     public function retrieveByCredentials(array $credentials)
     {
-        if ($this->isUsingProvider())
+        if ($this->ldapServer instanceof noLDAPConnection && $this->isUsingProvider())
         {
             // get the user from the provider
             $user = $this->provider->retrieveByCredentials($credentials);
-            if ($user !== null || $this->userMustExistInProvider) return $user;
+            if ($user !== null) {
+                return $user;
+            } else{
+                return null;
+            }
         }
 
-        // get the name of the credentials username field
-        $usernameField = $this->getCredentialsField('username');
         // grab the username from the credentials passed
-        $username = ($usernameField !== null) ? array_get($credentials, $usernameField) : null;
+        $username = $this->getUserName($credentials);
 
         if ($username !== null)
         {
             // get the user from LDAP
-            return $this->ldapServer->retrieveByUsername($username);
+            $ldapUser = $this->ldapServer->retrieveByUsername($username);
+
+            $model = app()->config['auth.model'];
+
+            $passwordField = $this->getCredentialsField('password');
+
+            $user =  $model::firstOrCreate([
+                'name' => $ldapUser->name,
+                'email' => $ldapUser->username
+            ]);
+
+            if(empty($user->password)) {
+                $user->password = bcrypt(array_get($credentials, $passwordField));
+                $user->save();
+            }
+
+
+            return $user;
         }
     }
 
@@ -154,6 +173,23 @@ class BaseLdapUserProvider implements LdapUserProvider {
 
         // validate with the LDAP server
         return $this->ldapServer->authenticate($credentials[$usernameField], $credentials[$passwordField]);
+    }
+
+    /**
+     * @param array $credentials
+     * @param $usernameField
+     * @return array|mixed|null
+     */
+    private function getUserName(array $credentials)
+    {
+        // get the name of the credentials username field
+        $usernameField = $this->getCredentialsField('username');
+
+        $username = ($usernameField !== null) ? array_get($credentials, $usernameField) : null;
+        $username = explode('@', $username);
+        $username = array_shift($username);
+
+        return $username;
     }
 
 }

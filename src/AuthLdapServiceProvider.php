@@ -1,6 +1,7 @@
 <?php namespace LaravelAuthLdap;
 
 use adLDAP\adLDAP;
+use adLDAP\adLDAPException;
 use Illuminate\Support\ServiceProvider;
 
 class AuthLdapServiceProvider extends ServiceProvider {
@@ -41,8 +42,12 @@ class AuthLdapServiceProvider extends ServiceProvider {
     {
         $this->app->bind('LaravelAuthLdap\Contracts\LdapServer', function($app)
         {
-            $server = new AdLDAPLdapServer;
-            $server->setAdServer(new adLDAP($app->config['adldap']));
+            try{
+                $server = new AdLDAPLdapServer;
+                $server->setAdServer(new adLDAP($app->config['adldap']));
+            } catch (adLDAPException $e){
+                $server = new noLDAPConnection();
+            }
 
             return $server;
         });
